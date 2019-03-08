@@ -21,9 +21,9 @@ RSpec.describe Pet, type: :model, versioning: true do
     cat.update(name: "Sylvester")
     person.update(name: "Peter")
 
-    expect(person.reload.versions.length).to(eq(3))
+    expect(person.versions.length).to(eq(3))
 
-    second_version = person.reload.versions.second.reify(has_many: true)
+    second_version = person.versions.second.reify(has_many: true)
     expect(second_version.pets.length).to(eq(2))
     expect(second_version.animals.length).to(eq(2))
     expect(second_version.animals.map { |a| a.class.name }).to(eq(%w[Dog Cat]))
@@ -33,7 +33,7 @@ RSpec.describe Pet, type: :model, versioning: true do
     expect(second_version.animals.second.name).to(eq("Garfield"))
     expect(second_version.cats.first.name).to(eq("Garfield"))
 
-    last_version = person.reload.versions.last.reify(has_many: true)
+    last_version = person.versions.last.reify(has_many: true)
     expect(last_version.pets.length).to(eq(2))
     expect(last_version.animals.length).to(eq(2))
     expect(last_version.animals.map { |a| a.class.name }).to(eq(%w[Dog Cat]))

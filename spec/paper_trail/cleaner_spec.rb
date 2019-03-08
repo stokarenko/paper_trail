@@ -58,7 +58,7 @@ module PaperTrail
           expect(animal.paper_trail.versions_between(date, (date + 1.day)).size).to(eq(3))
           PaperTrail.clean_versions!(date: date)
           expect(PaperTrail::Version.count).to(eq(8))
-          expect(animal.versions.reload.size).to(eq(2))
+          expect(animal.versions.size).to(eq(2))
           expect(animal.versions.first.created_at.to_date).to(eq(date))
           # Why use `equal?` here instead of something less strict?
           # Doesn't `to_date` always produce a new date object?
@@ -110,7 +110,6 @@ module PaperTrail
               date = animal.versions.first.created_at.to_date
               PaperTrail.clean_versions!(date: date, keeping: 2)
               [animal, dog].each do |animal|
-                animal.versions.reload
                 expect(animal.versions.size).to(eq(3))
                 expect(animal.versions.between(date, (date + 1.day)).size).to(eq(2))
               end
@@ -122,7 +121,6 @@ module PaperTrail
             it "restrict cleaning properly" do
               date = animal.versions.first.created_at.to_date
               PaperTrail.clean_versions!(date: date, item_id: dog.id)
-              dog.versions.reload
               expect(dog.versions.size).to(eq(2))
               expect(dog.versions.between(date, (date + 1.day)).size).to(eq(1))
               expect(PaperTrail::Version.count).to(eq(9))
@@ -133,7 +131,6 @@ module PaperTrail
             it "restrict cleaning properly" do
               date = animal.versions.first.created_at.to_date
               PaperTrail.clean_versions!(date: date, item_id: dog.id, keeping: 2)
-              dog.versions.reload
               expect(dog.versions.size).to(eq(3))
               expect(dog.versions.between(date, (date + 1.day)).size).to(eq(2))
               expect(PaperTrail::Version.count).to(eq(10))

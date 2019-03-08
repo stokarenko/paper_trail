@@ -67,14 +67,25 @@ module PaperTrail
 
     def record_create
       return unless enabled?
-      event = Events::Create.new(@record, true)
+
+      build_version_on_create(in_after_callback: true).tap do |version|
+        version.save!
+        versions.reset
+      end
+    end
+
+    # Returns the ready-for-save Version object built for a new record.
+    # Can be useful for manual Version saving, for instance as a part of
+    # bulk processing (https://github.com/zdennis/activerecord-import).
+    #
+    # @api public
+    def build_version_on_create(in_after_callback:)
+      event = Events::Create.new(@record, in_after_callback)
 
       # Merge data from `Event` with data from PT-AT. We no longer use
       # `data_for_create` but PT-AT still does.
-      data = event.data.merge(data_for_create)
-
-      versions_assoc = @record.send(@record.class.versions_association_name)
-      versions_assoc.create!(data)
+      data = event.data.merge!(data_for_create)
+      @record.class.paper_trail.version_class.new(data)
     end
 
     # PT-AT extends this method to add its transaction id.
@@ -117,22 +128,34 @@ module PaperTrail
     # @api private
     # @return - The created version object, so that plugins can use it, e.g.
     # paper_trail-association_tracking
-    def record_update(force:, in_after_callback:, is_touch:)
+    def record_update(build_version_params)
       return unless enabled?
+
+      version = build_version_on_update(build_version_params)
+      return unless version
+
+      version.save
+      if version.errors.any?
+        log_version_errors(version, :update)
+      else
+        versions.reset
+        version
+      end
+    end
+
+    # Returns the ready-for-save Version object built for existing record.
+    # Can be useful for manual Version saving, for instance as a part of
+    # bulk processing (https://github.com/zdennis/activerecord-import).
+    #
+    # @api public
+    def build_version_on_update(force:, in_after_callback:, is_touch:)
       event = Events::Update.new(@record, in_after_callback, is_touch, nil)
       return unless force || event.changed_notably?
 
       # Merge data from `Event` with data from PT-AT. We no longer use
       # `data_for_update` but PT-AT still does.
-      data = event.data.merge(data_for_update)
-
-      versions_assoc = @record.send(@record.class.versions_association_name)
-      version = versions_assoc.create(data)
-      if version.errors.any?
-        log_version_errors(version, :update)
-      else
-        version
-      end
+      data = event.data.merge!(data_for_update)
+      @record.class.paper_trail.version_class.new(data)
     end
 
     # PT-AT extends this method to add its transaction id.

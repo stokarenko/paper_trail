@@ -43,7 +43,7 @@ module PaperTrail
       widget.versions.last.send(:enforce_version_limit!)
 
       # Verify that we have fewer versions:
-      expect(widget.reload.versions.count).to eq(4) # 1 create + 4 updates
+      expect(widget.versions.count).to eq(4) # 1 create + 4 updates
 
       # Exclude the create, because the create will return nil for `#reify`.
       last_names = widget.versions.not_creates.map(&:reify).map(&:name)

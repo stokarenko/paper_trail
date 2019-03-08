@@ -24,13 +24,13 @@ RSpec.describe PaperTrail, versioning: true do
       thing.update(name: "BMX 2.0")
       person.update(name: "Peter")
 
-      expect(person.reload.versions.length).to(eq(3))
+      expect(person.versions.length).to(eq(3))
 
       logger = person.versions.first.logger
 
       allow(logger).to receive(:warn)
 
-      person.reload.versions.second.reify(has_one: true)
+      person.versions.second.reify(has_one: true)
 
       expect(logger).to(
         have_received(:warn).with(/Unable to reify has_one association/).twice
